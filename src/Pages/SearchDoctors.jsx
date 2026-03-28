@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { showErrorToast } from "../utils/toast";
+import OpenStreetMap from "../Components/OpenStreetMap";
+import { MapPin, Search } from "lucide-react";
 
 const SPECIALIZATION_OPTIONS = [
   "General Physician",
@@ -27,6 +29,11 @@ const SearchDoctors = () => {
   // Results
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Location and Map
+  const [userLocation, setUserLocation] = useState(null);
+  const [showMap, setShowMap] = useState(false);
+  const [useLocation, setUseLocation] = useState(false);
 
   // Basic search
   const [doctorName, setDoctorName] = useState("");
@@ -94,6 +101,13 @@ const SearchDoctors = () => {
       if (city) params.append("city", city.trim());
       if (area) params.append("area", area.trim());
 
+      // Location-based search
+      if (useLocation && userLocation) {
+        params.append("lat", userLocation.lat);
+        params.append("lng", userLocation.lng);
+        params.append("maxDistance", "25"); // Default 25km radius
+      }
+
       // Filters
       if (availability) params.append("availability", availability);
       if (timeOfDay) params.append("timeOfDay", timeOfDay);
@@ -132,6 +146,68 @@ const SearchDoctors = () => {
 
   const handleViewDetails = (doctorId) => {
     navigate(`/book-appointment/${doctorId}`);
+  };
+
+  const handleLocationToggle = async () => {
+    if (!useLocation) {
+      try {
+        const location = await new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            // Fallback to Kathmandu coordinates
+            resolve({
+              lat: 27.7172,
+              lng: 85.3240
+            });
+            return;
+          }
+          
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              resolve({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+              });
+            },
+            (error) => {
+              // Fallback to Kathmandu coordinates if user denies location
+              console.warn('Location access denied, using default location');
+              resolve({
+                lat: 27.7172,
+                lng: 85.3240
+              });
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 300000 // 5 minutes
+            }
+          );
+        });
+        
+        setUserLocation(location);
+        setUseLocation(true);
+        setShowMap(true);
+        
+        // Show appropriate message
+        if (location.lat === 27.7172 && location.lng === 85.3240) {
+          showErrorToast('Using default location (Kathmandu). Enable location access for better results.');
+        }
+      } catch (err) {
+        console.error('Error getting location:', err);
+        showErrorToast('Could not access your location. Using default location.');
+        // Still set default location so the app continues to work
+        setUserLocation({
+          lat: 27.7172,
+          lng: 85.3240
+        });
+        setUseLocation(true);
+        setShowMap(true);
+      }
+    } else {
+      setUseLocation(false);
+      setUserLocation(null);
+      setShowMap(false);
+    }
   };
 
   return (
@@ -190,6 +266,27 @@ const SearchDoctors = () => {
                   onChange={(e) => setArea(e.target.value)}
                   className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
+              </div>
+              
+              {/* Location Toggle */}
+              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                <button
+                  type="button"
+                  onClick={handleLocationToggle}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    useLocation 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  <MapPin className="w-4 h-4" />
+                  {useLocation ? 'Using Location' : 'Use My Location'}
+                </button>
+                {useLocation && userLocation && (
+                  <span className="text-sm text-gray-600">
+                    Searching near your current location
+                  </span>
+                )}
               </div>
             </div>
 
@@ -282,14 +379,48 @@ const SearchDoctors = () => {
         </div>
 
         {/* Results */}
-        {loading ? (
-          <div className="text-center py-12 text-gray-600">Loading doctors...</div>
-        ) : doctors.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-xl p-10 text-center text-gray-600">
-            No doctors found. Try changing filters or specialization.
+        <div className="space-y-6">
+          {/* Map Toggle and Results Header */}
+          <div className="bg-white rounded-2xl shadow-xl p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+              <h2 className="text-2xl font-semibold text-gray-800">
+                {doctors.length} Doctors Found
+              </h2>
+              {userLocation && (
+                <button
+                  type="button"
+                  onClick={() => setShowMap(!showMap)}
+                  className="mt-4 md:mt-0 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <MapPin className="w-4 h-4" />
+                  {showMap ? 'Hide Map' : 'Show Map'}
+                </button>
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          {/* Map Component */}
+          {showMap && userLocation && (
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <OpenStreetMap
+                doctors={doctors}
+                center={userLocation}
+                searchRadius={25}
+                onDoctorSelect={handleViewDetails}
+                height="500px"
+              />
+            </div>
+          )}
+
+          {/* Doctor Cards */}
+          {loading ? (
+            <div className="text-center py-12 text-gray-600">Loading doctors...</div>
+          ) : doctors.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-xl p-10 text-center text-gray-600">
+              No doctors found. Try changing filters or specialization.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {doctors.map((doctor) => (
               <div
                 key={doctor.id}
@@ -340,6 +471,7 @@ const SearchDoctors = () => {
             ))}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

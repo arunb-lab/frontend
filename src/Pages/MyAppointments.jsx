@@ -99,17 +99,23 @@ const MyAppointments = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "approved": return "bg-green-100 text-green-800";
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "rejected": return "bg-red-100 text-red-800";
-      case "cancelled": return "bg-gray-100 text-gray-800";
-      case "completed": return "bg-blue-100 text-blue-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "approved":        return "bg-green-100 text-green-800";
+      case "pending":         return "bg-yellow-100 text-yellow-800";
+      case "payment_pending": return "bg-orange-100 text-orange-800";
+      case "rejected":        return "bg-red-100 text-red-800";
+      case "cancelled":       return "bg-gray-100 text-gray-800";
+      case "completed":       return "bg-blue-100 text-blue-800";
+      default:                return "bg-gray-100 text-gray-800";
     }
   };
 
+  const getStatusLabel = (status) => {
+    if (status === "payment_pending") return "Awaiting Payment";
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
   const canCancel = (appointment) => (
-    (appointment.status === "pending" || appointment.status === "approved")
+    appointment.status === "pending" || appointment.status === "approved"
   );
 
   const handleSubmitReview = async (appointmentId) => {
@@ -192,13 +198,17 @@ const MyAppointments = () => {
                       <h3 className="text-2xl font-semibold text-gray-800">
                         Dr. {appointment.doctor.name}
                       </h3>
+                      {appointment.payment && (
+                        <span className="text-sm text-gray-600 ml-2">
+                          ({appointment.payment.status.toUpperCase()} • Rs{(appointment.payment.amount/100).toFixed(2)})
+                        </span>
+                      )}
                       <span
                         className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
                           appointment.status
                         )}`}
                       >
-                        {appointment.status.charAt(0).toUpperCase() +
-                          appointment.status.slice(1)}
+                        {getStatusLabel(appointment.status)}
                       </span>
                     </div>
                     <p className="text-blue-600 font-medium">{appointment.doctor.specialization}</p>
@@ -208,7 +218,7 @@ const MyAppointments = () => {
                   <div className="text-right mt-4 md:mt-0">
                     <p className="text-sm text-gray-600">Consultation Fee</p>
                     <p className="text-xl font-semibold text-gray-800">
-                      ${appointment.consultationFee || 0}
+                      Rs.{appointment.consultationFee || 0}
                     </p>
                   </div>
                 </div>

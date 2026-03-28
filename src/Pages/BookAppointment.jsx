@@ -20,6 +20,34 @@ const BookAppointment = () => {
   });
   const [bookedSlots, setBookedSlots] = useState([]);
 
+  
+  const generateTimeSlots = (start, end) => {
+    const slots = [];
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    let cur = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+    while (cur < endMin) {
+      const h = String(Math.floor(cur / 60)).padStart(2, "0");
+      const m = String(cur % 60).padStart(2, "0");
+      slots.push(`${h}:${m}`);
+      cur += 30;
+    }
+    return slots;
+  };
+
+  // Derive available time slots for the selected date
+  const getAvailableSlots = () => {
+    if (!doctor?.availability || !formData.appointmentDate) return [];
+    // Use UTC to avoid timezone shifting the date by one day
+    const d = new Date(formData.appointmentDate + "T00:00:00");
+    const day = d.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+    const daySlots = doctor.availability[day];
+    if (!daySlots || daySlots.length === 0) return [];
+    const all = daySlots.flatMap((s) => generateTimeSlots(s.start, s.end));
+    return all;
+  };
+
   useEffect(() => {
     if (doctorId && formData.appointmentDate) {
       fetchBookedSlots();
@@ -60,10 +88,12 @@ const BookAppointment = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
-    });
+     
+      ...(name === "appointmentDate" ? { appointmentTime: "" } : {}),
+    }));
     setError("");
   };
 
@@ -79,8 +109,8 @@ const BookAppointment = () => {
       return;
     }
 
-    // Check availability based on doctor's schedule
-    const dateObj = new Date(formData.appointmentDate);
+
+    const dateObj = new Date(formData.appointmentDate + "T00:00:00");
     const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
     if (doctor.availability) {
@@ -116,12 +146,16 @@ const BookAppointment = () => {
       return;
     }
 
+    // amount for Khalti is consultation fee in paisa
+    const amount = Math.round((doctor.consultationFee || 0) * 100);
+
+    
     try {
       const config = getAuthConfig();
       const res = await axios.post(
-        "http://localhost:3000/appointments/book",
+        "http://localhost:3000/payments/khalti/initiate",
         {
-          doctorId: doctorId,
+          doctorId,
           appointmentDate: formData.appointmentDate,
           appointmentTime: formData.appointmentTime,
           reason: formData.reason,
@@ -130,14 +164,10 @@ const BookAppointment = () => {
         },
         config
       );
-
-      showSuccessToast("Appointment booked successfully!");
-      navigate("/my-appointments");
+      // Redirect browser to Khalti's hosted payment page
+      window.location.href = res.data.payment_url;
     } catch (err) {
-      showErrorToast(err.response?.data?.message || "Failed to book appointment. Please try again.");
-      setError(errorMessage);
-      console.error("Booking error:", err);
-    } finally {
+      showErrorToast(err.response?.data?.message || "Failed to initiate payment. Please try again.");
       setSubmitting(false);
     }
   };
@@ -237,35 +267,60 @@ const BookAppointment = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Appointment Time *
               </label>
-              <input
-                type="time"
-                name="appointmentTime"
-                value={formData.appointmentTime}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {doctor && doctor.availability && (
-                <div className="mt-2 text-sm text-gray-600">
-                  <p className="font-medium text-gray-800">Available Hours:</p>
-                  {Object.entries(doctor.availability).map(([day, slots]) => {
-                    if (slots && slots.length > 0) {
-                      return (
-                        <div key={day} className="capitalize">
-                          {day}: {slots.map(s => `${s.start} - ${s.end}`).join(", ")}
-                        </div>
-                      )
-                    }
-                    return null;
-                  })}
-                </div>
-              )}
-              {bookedSlots.length > 0 && (
-                <div className="mt-2 text-sm text-red-500">
-                  <p className="font-medium">Booked Slots (Unavailable):</p>
-                  <p>{bookedSlots.join(", ")}</p>
-                </div>
-              )}
+
+              {!formData.appointmentDate ? (
+                <p className="text-sm text-gray-400 italic">Please select a date first to see available slots.</p>
+              ) : (() => {
+                const slots = getAvailableSlots();
+                if (slots.length === 0) {
+                  return (
+                    <p className="text-sm text-red-500">
+                      Doctor has no availability on this day. Please choose another date.
+                    </p>
+                  );
+                }
+                return (
+                  <>
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-1">
+                      {slots.map((slot) => {
+                        const isBooked = bookedSlots.includes(slot);
+                        const isSelected = formData.appointmentTime === slot;
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            disabled={isBooked}
+                            onClick={() => {
+                              if (!isBooked) {
+                                setFormData((prev) => ({ ...prev, appointmentTime: slot }));
+                                setError("");
+                              }
+                            }}
+                            className={`py-1.5 px-2 rounded text-sm font-medium border transition
+                              ${
+                                isBooked
+                                  ? "bg-red-50 text-red-300 border-red-200 cursor-not-allowed line-through"
+                                  : isSelected
+                                  ? "bg-blue-600 text-white border-blue-600"
+                                  : "bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                              }`}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {formData.appointmentTime && (
+                      <p className="mt-2 text-sm text-blue-700 font-medium">
+                        Selected: {formData.appointmentTime}
+                      </p>
+                    )}
+                    {bookedSlots.length > 0 && (
+                      <p className="mt-1 text-xs text-red-400">Red slots are already booked.</p>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             <div>
@@ -283,7 +338,7 @@ const BookAppointment = () => {
               />
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Additional Notes (Optional)
               </label>
@@ -295,7 +350,7 @@ const BookAppointment = () => {
                 placeholder="Any additional information..."
                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
+            </div> */}
 
             <div className="flex items-center gap-2">
               <input

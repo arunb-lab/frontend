@@ -55,6 +55,9 @@ const Navbar = () => {
                     <Link to="/search-doctors">Search Doctors</Link>
                   </li>
                   <li className="hover:text-gray-300 cursor-pointer">
+                    <Link to="/nearby-doctors">Nearby Doctors</Link>
+                  </li>
+                  <li className="hover:text-gray-300 cursor-pointer">
                     <Link to="/my-appointments">My Appointments</Link>
                   </li>
                 </>
@@ -101,7 +104,10 @@ const Navbar = () => {
                 <Link to="/departments">Departments</Link>
               </li>
               <li className="hover:text-gray-300 cursor-pointer">
-                <Link to="/doctors">Doctors</Link>
+                <Link to="/search-doctors">Search Doctors</Link>
+              </li>
+              <li className="hover:text-gray-300 cursor-pointer">
+                <Link to="/nearby-doctors">Nearby Doctors</Link>
               </li>
               <li className="hover:text-gray-300 cursor-pointer">
                 <Link to="/contact">Contact</Link>

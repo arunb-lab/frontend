@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { showSuccessToast, showErrorToast, showInfoToast } from "../utils/toast";
 import registerImage from "../assets/R.jpg";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const SPECIALIZATION_OPTIONS = [
   "General Physician",
@@ -19,6 +20,7 @@ const SPECIALIZATION_OPTIONS = [
 
 const Register = () => {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -36,6 +38,16 @@ const Register = () => {
     experience: "",
     bio: "",
     consultationFee: "",
+    // Clinic and location fields
+    clinicName: "",
+    clinicAddress: "",
+    clinicCity: "",
+    clinicState: "",
+    clinicPostalCode: "",
+    clinicPhone: "",
+    clinicEmail: "",
+    clinicLat: "",
+    clinicLng: "",
   });
 
   const handleChange = (e) => {
@@ -92,7 +104,18 @@ const Register = () => {
         registrationData.bio = formData.bio?.trim() || "";
         registrationData.consultationFee = formData.consultationFee
           ? parseFloat(formData.consultationFee)
-          : 0;
+          : 500; // Default to minimum required
+        
+        // Add required clinic and location fields
+        registrationData.clinicName = formData.clinicName?.trim() || `${formData.specialization} Clinic`;
+        registrationData.clinicAddress = formData.clinicAddress?.trim() || "123 Main Street";
+        registrationData.clinicCity = formData.clinicCity?.trim() || "Kathmandu";
+        registrationData.clinicState = formData.clinicState?.trim() || "Bagmati";
+        registrationData.clinicPostalCode = formData.clinicPostalCode?.trim() || "44600";
+        registrationData.clinicPhone = formData.clinicPhone?.trim() || formData.phone?.trim();
+        registrationData.clinicEmail = formData.clinicEmail?.trim() || formData.email?.trim();
+        registrationData.clinicLat = formData.clinicLat || "27.7172"; // Default Kathmandu coordinates
+        registrationData.clinicLng = formData.clinicLng || "85.3240";
       }
 
       const res = await axios.post("http://localhost:3000/users/register", registrationData);
@@ -148,9 +171,9 @@ const Register = () => {
                   <option value="patient">Patient</option>
                   <option value="doctor">Doctor</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                {/* <p className="text-xs text-gray-500 mt-1">
                   Note: Admin accounts can only be created by existing admins
-                </p>
+                </p> */}
               </div>
 
               {/* Common Fields */}
@@ -174,16 +197,25 @@ const Register = () => {
                 className="w-full p-2 border rounded"
               />
 
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                minLength={6}
-                className="w-full p-2 border rounded"
-              />
+                 <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              minLength={6}
+              className="w-full p-2 pr-10 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-500"
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
+          </div>
 
               <input
                 type="tel"
@@ -197,11 +229,15 @@ const Register = () => {
               <input
                 type="text"
                 name="address"
-                placeholder="Address (Optional)"
+                placeholder="Address"
                 value={formData.address}
                 onChange={handleChange}
                 className="w-full p-2 border rounded"
               />
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                DOB
+
+              </label>
 
               <input
                 type="date"
@@ -280,13 +316,91 @@ const Register = () => {
                   <input
                     type="number"
                     name="consultationFee"
-                    placeholder="Consultation Fee"
+                    placeholder="Consultation Fee (min 500)"
                     value={formData.consultationFee}
                     onChange={handleChange}
                     min="500"
                     step="50"
                     className="w-full p-2 border rounded"
                   />
+
+                  <div className="border-t pt-4 mt-4">
+                    <h3 className="font-semibold text-gray-700 mb-3">Clinic Information</h3>
+                  </div>
+
+                  <input
+                    type="text"
+                    name="clinicName"
+                    placeholder="Clinic Name *"
+                    value={formData.clinicName}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-2 border rounded"
+                  />
+
+                  <input
+                    type="text"
+                    name="clinicAddress"
+                    placeholder="Clinic Address *"
+                    value={formData.clinicAddress}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-2 border rounded"
+                  />
+
+                  <input
+                    type="text"
+                    name="clinicCity"
+                    placeholder="Clinic City *"
+                    value={formData.clinicCity}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-2 border rounded"
+                  />
+
+                  <input
+                    type="text"
+                    name="clinicState"
+                    placeholder="Clinic State (Optional)"
+                    value={formData.clinicState}
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded"
+                  />
+
+                  <input
+                    type="text"
+                    name="clinicPostalCode"
+                    placeholder="Postal Code (Optional)"
+                    value={formData.clinicPostalCode}
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded"
+                  />
+
+                  <div className="border-t pt-4 mt-4">
+                    <h3 className="font-semibold text-gray-700 mb-3">Location (Optional)</h3>
+                    <p className="text-xs text-gray-500 mb-2">Enter coordinates for map display</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="number"
+                      name="clinicLat"
+                      placeholder="Latitude"
+                      value={formData.clinicLat}
+                      onChange={handleChange}
+                      step="0.0001"
+                      className="w-full p-2 border rounded"
+                    />
+                    <input
+                      type="number"
+                      name="clinicLng"
+                      placeholder="Longitude"
+                      value={formData.clinicLng}
+                      onChange={handleChange}
+                      step="0.0001"
+                      className="w-full p-2 border rounded"
+                    />
+                  </div>
                 </>
               )}
 

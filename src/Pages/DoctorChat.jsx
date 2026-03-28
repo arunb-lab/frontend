@@ -190,12 +190,12 @@ const DoctorChat = () => {
     : "";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-gray-300 via-gray-300 to-gray-300 flex flex-col">
       {/* Header */}
-      <div className="bg-white shadow-lg border-b border-gray-200 flex items-center gap-4 px-6 py-4">
+      <div className="bg-white shadow-lg border-b border-gray-500 flex items-center gap-4 px-6 py-4">
         <button 
           onClick={() => navigate("/doctor/dashboard")} 
-          className="text-gray-600 hover:text-gray-800 hover:bg-gray-100 p-2 rounded-lg transition-colors"
+          className="text-gray-600 hover:text-gray-800 hover:bg-gray-400 p-2 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-6 h-6" />
         </button>
@@ -212,7 +212,7 @@ const DoctorChat = () => {
 
       <div className="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto">
         {/* Sidebar */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+        <div className="w-80 bg-white border-r border-gray-300 flex flex-col">
           {/* New Chat Button */}
           <div className="p-4 border-b border-gray-200">
             <button
@@ -226,7 +226,7 @@ const DoctorChat = () => {
 
           {/* New Chat Panel */}
           {showNewChat && (
-            <div className="border-b border-gray-200 bg-gray-50">
+            <div className="border-b border-gray-200 bg-gray-300">
               <div className="p-4">
                 <input
                   type="text"

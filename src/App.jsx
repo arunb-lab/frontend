@@ -14,6 +14,7 @@ import AdminDashboard from "./Pages/AdminDashboard";
 import DoctorDashboard from "./Pages/DoctorDashboard";
 import DoctorAvailability from "./Pages/DoctorAvailability";
 import SearchDoctors from "./Pages/SearchDoctors";
+import NearbyDoctors from "./Pages/NearbyDoctors";
 import BookAppointment from "./Pages/BookAppointment";
 import MyAppointments from "./Pages/MyAppointments";
 import DoctorAppointments from "./Pages/DoctorAppointments";
@@ -27,6 +28,8 @@ import ResetPassword from "./Pages/ResetPassword";
 import Departments from "./Pages/Departments";
 import PatientChat from "./Pages/PatientChat";
 import DoctorChat from "./Pages/DoctorChat";
+import PaymentReturn from "./Pages/PaymentReturn";
+import MockKhaltiPayment from "./Pages/MockKhaltiPayment";
 
 
 
@@ -44,6 +47,8 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/departments" element={<Departments />} />
+          <Route path="/search-doctors" element={<SearchDoctors />} />
+          <Route path="/nearby-doctors" element={<NearbyDoctors />} />
 
           {/* Protected Routes */}
           <Route
@@ -136,6 +141,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/payment/return"
+            element={
+              <ProtectedRoute requiredRole="patient">
+                <PaymentReturn />
+              </ProtectedRoute>
+            }
+          />
+          {/* Mock Khalti page — active only when KHALTI_TEST=true in backend */}
+          <Route path="/payment/mock-khalti" element={<MockKhaltiPayment />} />
           <Route
             path="/admin/verify-doctors"
             element={

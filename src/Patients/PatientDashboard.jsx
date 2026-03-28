@@ -16,7 +16,7 @@ function PatientDashboard() {
       <div className="bg-white rounded-2xl shadow-lg p-8 mb-10 flex flex-col md:flex-row items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-blue-800 mb-2">
-            Welcome Back 👋
+            Welcome 
           </h1>
           <p className="text-gray-600">
             Manage your appointments and health activities easily.

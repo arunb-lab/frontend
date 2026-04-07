@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { showErrorToast } from "../utils/toast";
 import OpenStreetMap from "../Components/OpenStreetMap";
-import { MapPin, Search } from "lucide-react";
+import { MapPin, Search, Heart, Stethoscope, Calendar, Clock, Users, Star, Phone, Mail } from "lucide-react";
 
 const SPECIALIZATION_OPTIONS = [
   "General Physician",
@@ -30,6 +30,9 @@ const SearchDoctors = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Check if this is a department-based search
+  const isDepartmentSearch = specFromUrl !== "";
+
   // Location and Map
   const [userLocation, setUserLocation] = useState(null);
   const [showMap, setShowMap] = useState(false);
@@ -38,6 +41,7 @@ const SearchDoctors = () => {
   // Basic search
   const [doctorName, setDoctorName] = useState("");
   const [specialization, setSpecialization] = useState("");
+  console.log('Current specialization state:', specialization); // Debug log
   const [specializations, setSpecializations] = useState([]);
   const [hospitalClinic, setHospitalClinic] = useState("");
   const [city, setCity] = useState("");
@@ -58,17 +62,50 @@ const SearchDoctors = () => {
 
   useEffect(() => {
     fetchSpecializations();
-    if (specFromUrl) setSpecialization(specFromUrl);
-    // Also fetch doctors initially
-    fetchDoctors();
+    // Only fetch doctors if there's a specialization from URL (department search)
+    if (specFromUrl) {
+      setSpecialization(specFromUrl);
+      fetchDoctors(specFromUrl); // Pass the value directly to avoid stale state bug
+    }
   }, [specFromUrl]);
 
-  // Auto-search when specialization changes or specializations are loaded
+  // Fetch doctors when specialization changes
   useEffect(() => {
-    if (specializations.length > 0) {
-      fetchDoctors();
+    if (specialization) {
+      console.log('Specialization changed, fetching doctors:', specialization);
+      fetchDoctors(specialization);
+    } else {
+      // If specialization is cleared, fetch all doctors
+      fetchDoctors("");
     }
-  }, [specialization, specializations]);
+  }, [specialization]);
+
+  // Create a separate function for category search
+  const handleCategoryClick = async (categoryName) => {
+    try {
+      console.log('=== CATEGORY CLICKED ===');
+      console.log('Category clicked:', categoryName);
+      setSpecialization(categoryName);
+      // fetchDoctors will be triggered by the useEffect above
+    } catch (error) {
+      console.error('=== ERROR IN CATEGORY CLICK ===');
+      console.error('Error details:', error);
+      showErrorToast("Failed to fetch doctors");
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSpecialization("");
+    setDoctorName("");
+    setHospitalClinic("");
+    setCity("");
+    setArea("");
+    setUseLocation(false);
+    setUserLocation(null);
+    setShowMap(false);
+    // Remove query param from URL
+    navigate("/search-doctors", { replace: true });
+  };
 
   const fetchSpecializations = async () => {
     try {
@@ -85,14 +122,19 @@ const SearchDoctors = () => {
     }
   };
 
-  const fetchDoctors = async () => {
+  const fetchDoctors = async (specificSpecialization = null) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      
+      // Use the provided override or the current state
+      const finalSpec = (specificSpecialization !== null) ? specificSpecialization : specialization;
+      
+      console.log('Fetching doctors with specialization:', finalSpec); // Debug log
 
       // Basic
       if (doctorName) params.append("name", doctorName.trim());
-      if (specialization) params.append("specialization", specialization);
+      if (finalSpec) params.append("specialization", finalSpec);
       if (hospitalClinic) params.append("hospital", hospitalClinic.trim());
       if (city) params.append("city", city.trim());
       if (area) params.append("area", area.trim());
@@ -114,19 +156,19 @@ const SearchDoctors = () => {
 
       // Advanced
       if (experience && experience !== "Any") {
-        const parts = experience.split("+")[0];
-        params.append("minExperience", parts.replace(/\D/g, ""));
+        const expYears = parseInt(experience.split("+")[0]);
+        params.append("experience", expYears);
       }
       if (rating && rating !== "Any") {
-        const numeric = rating.split("+")[0];
-        params.append("minRating", numeric.replace(/\D/g, ""));
+        const minRating = parseFloat(rating.split("+")[0]);
+        params.append("minRating", minRating);
       }
       if (language) params.append("language", language.trim());
 
-      const res = await axios.get(
-        `http://localhost:3000/doctors/search?${params.toString()}`
-      );
-      setDoctors(res.data.doctors);
+      const res = await axios.get(`http://localhost:3000/doctors/search?${params}`);
+      const doctorsData = res.data.doctors || [];
+      console.log('Doctors data:', doctorsData[0]); // Debug log
+      setDoctors(doctorsData);
     } catch (err) {
       console.error("Error fetching doctors:", err);
       showErrorToast("Failed to fetch doctors. Please try again.");
@@ -140,64 +182,28 @@ const SearchDoctors = () => {
     fetchDoctors();
   };
 
-  const handleViewDetails = (doctorId) => {
-    navigate(`/book-appointment/${doctorId}`);
-  };
-
   const handleLocationToggle = async () => {
     if (!useLocation) {
       try {
-        const location = await new Promise((resolve, reject) => {
-          if (!navigator.geolocation) {
-            // Fallback to Kathmandu coordinates
-            resolve({
-              lat: 27.7172,
-              lng: 85.3240
-            });
-            return;
-          }
-          
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              resolve({
-                lat: position.coords.latitude,
-                lng: position.coords.longitude
-              });
-            },
-            (error) => {
-              // Fallback to Kathmandu coordinates if user denies location
-              console.warn('Location access denied, using default location');
-              resolve({
-                lat: 27.7172,
-                lng: 85.3240
-              });
-            },
-            {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 300000 // 5 minutes
-            }
-          );
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000,
+          });
         });
-        
+
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+
         setUserLocation(location);
         setUseLocation(true);
         setShowMap(true);
-        
-        // Show appropriate message
-        if (location.lat === 27.7172 && location.lng === 85.3240) {
-          showErrorToast('Using default location (Kathmandu). Enable location access for better results.');
-        }
       } catch (err) {
-        console.error('Error getting location:', err);
-        showErrorToast('Could not access your location. Using default location.');
-        // Still set default location so the app continues to work
-        setUserLocation({
-          lat: 27.7172,
-          lng: 85.3240
-        });
-        setUseLocation(true);
-        setShowMap(true);
+        console.error("Location error:", err);
+        showErrorToast("Failed to get location. Please enable location services.");
       }
     } else {
       setUseLocation(false);
@@ -207,266 +213,213 @@ const SearchDoctors = () => {
   };
 
   return (
-    <div className="bg-gray-300 px-10 py-20 flex flex-col md:flex-row items-center gap-10">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold text-gray-800">Find Your Doctor</h1>
-          <p className="text-gray-600 mt-2">
-            Search by name, specialization, hospital, location, availability, consultation type, and fee.
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative overflow-hidden">
+      {/* Background Shapes */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
+        <div className="absolute top-40 right-10 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse animation-delay-2000"></div>
+        <div className="absolute bottom-20 left-1/2 w-80 h-80 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse animation-delay-4000"></div>
+        <div className="absolute top-1/3 left-1/4 w-64 h-64 bg-blue-100 rounded-full opacity-20"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-48 h-48 bg-indigo-100 rounded-full opacity-20"></div>
+      </div>
 
-        {/* Search Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <form onSubmit={handleSearch} className="space-y-6">
-            {/* Basic Search */}
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Basic Search</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                <input
-                  type="text"
-                  placeholder="Doctor Name (e.g. Dr. Sita Sharma)"
-                  value={doctorName}
-                  onChange={(e) => setDoctorName(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <select
-                  value={specialization}
-                  onChange={(e) => setSpecialization(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  <option value="">All Specializations</option>
-                  {specializations.map((spec) => (
-                    <option key={spec} value={spec}>{spec}</option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder="Hospital / Clinic"
-                  value={hospitalClinic}
-                  onChange={(e) => setHospitalClinic(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <input
-                  type="text"
-                  placeholder="City"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <input
-                  type="text"
-                  placeholder="Area"
-                  value={area}
-                  onChange={(e) => setArea(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
+      {/* Hero Section - Only shown when no specialization is selected */}
+      {!specialization && (
+        <div className="relative z-10 px-4 py-16 lg:py-16">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-10">
+              <h1 className="text-5xl lg:text-6xl font-bold text-gray-800 mb-6 leading-tight">
+                Quick, Easy, Reliable Healthcare
+              </h1>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Connect with qualified healthcare professionals instantly. Book appointments, get consultations, and manage your health journey.
+              </p>
+            </div>
+
+            {/* Search Bar */}
+            <div className="max-w-4xl mx-auto mb-10">
+              <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-white/20">
+                <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input
+                      type="text"
+                      placeholder="Search by specialty or doctor"
+                      value={doctorName}
+                      onChange={(e) => setDoctorName(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold"
+                  >
+                    Search
+                  </button>
+                </form>
               </div>
-              
-              {/* Location Toggle */}
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                <button
-                  type="button"
-                  onClick={handleLocationToggle}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    useLocation 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  <MapPin className="w-4 h-4" />
-                  {useLocation ? 'Using Location' : 'Use My Location'}
-                </button>
-                {useLocation && userLocation && (
-                  <span className="text-sm text-gray-600">
-                    Searching near your current location
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Filters</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                <select
-                  value={availability}
-                  onChange={(e) => setAvailability(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  <option value="">Availability</option>
-                  <option value="today">Today</option>
-                  <option value="tomorrow">Tomorrow</option>
-                  <option value="week">This Week</option>
-                </select>
-                <select
-                  value={timeOfDay}
-                  onChange={(e) => setTimeOfDay(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  <option value="">Time Slots</option>
-                  <option value="morning">Morning</option>
-                  <option value="evening">Evening</option>
-                </select>
-                <select
-                  value={consultationType}
-                  onChange={(e) => setConsultationType(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  <option value="">Consultation Type</option>
-                  <option value="physical">Physical</option>
-                  <option value="online">Online</option>
-                </select>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  <option value="">Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
-
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="Min Fee"
-                  value={minFee}
-                  onChange={(e) => setMinFee(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="Max Fee"
-                  value={maxFee}
-                  onChange={(e) => setMaxFee(e.target.value)}
-                  className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-              </div>
-            </div>
-
-            {/* Advanced */}
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Advanced</h2>
-              <select
-                value={experience}
-                onChange={(e) => setExperience(e.target.value)}
-                className="p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-              >
-                {EXPERIENCE_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Submit */}
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-blue-400 transition"
-              >
-                {loading ? "Searching..." : "Search Doctors"}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Results */}
-        <div className="space-y-6">
-          {/* Map Toggle and Results Header */}
-          <div className="bg-white rounded-2xl shadow-xl p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                {doctors.length} Doctors Found
-              </h2>
-              {userLocation && (
-                <button
-                  type="button"
-                  onClick={() => setShowMap(!showMap)}
-                  className="mt-4 md:mt-0 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                >
-                  <MapPin className="w-4 h-4" />
-                  {showMap ? 'Hide Map' : 'Show Map'}
-                </button>
-              )}
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Map Component */}
-          {showMap && userLocation && (
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <OpenStreetMap
-                doctors={doctors}
-                center={userLocation}
-                searchRadius={25}
-                onDoctorSelect={handleViewDetails}
-                height="500px"
-              />
+      {/* Department Header - shown when specialization is active */}
+      {specialization && (
+        <div className="relative z-10 pt-10 px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+              <div>
+                <h1 className="text-4xl lg:text-5xl font-bold text-gray-800 mb-2">
+                  {specialization}s
+                </h1>
+                <p className="text-lg text-gray-600">
+                  Qualified specialists available for your healthcare needs
+                </p>
+              </div>
+              <button 
+                onClick={handleClearFilters}
+                className="bg-white border border-gray-200 px-6 py-2 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors shadow-sm font-medium flex items-center gap-2"
+              >
+                <Search className="w-4 h-4" />
+                Change Search
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="relative z-10 pb-20">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Search Results */}
+          {!loading && doctors.length > 0 && (
+            <div className="max-w-6xl mx-auto mb-12">
+              <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-lg border border-white/20">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">
+                  {specialization 
+                    ? `${doctors.length} Specialist${doctors.length !== 1 ? 's' : ''} Found`
+                    : `${doctors.length} Doctor${doctors.length !== 1 ? 's' : ''} Found`
+                  }
+                </h2>
+                
+                {/* Doctor List */}
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {doctors.map((doctor) => (
+                    <div key={doctor.id} className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:shadow-lg transition-all duration-300">
+                      <div className="flex items-start gap-4">
+                        <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-white font-bold text-lg">
+                            {doctor.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-gray-800">{doctor.name}</h3>
+                          <p className="text-blue-600 font-medium">{doctor.specialization}</p>
+                          <p className="text-gray-600 text-sm mt-1">{doctor.clinic?.name}</p>
+                          <p className="text-gray-500 text-sm">{doctor.clinic?.address}</p>
+                          
+                          <div className="flex items-center gap-4 mt-3">
+                            {doctor.consultationFee && doctor.consultationFee > 0 ? (
+                              <span className="text-green-600 font-semibold">
+                                Rs. {doctor.consultationFee}
+                              </span>
+                            ) : (
+                              <span className="text-gray-500 text-sm">
+                                Fee not available
+                              </span>
+                            )}
+                            {doctor.averageRating && (
+                              <div className="flex items-center gap-1">
+                                <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                                <span className="text-sm text-gray-600">{doctor.averageRating}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex gap-2 mt-4">
+                            <button
+                              onClick={() => navigate(`/book-appointment/${doctor.id}`)}
+                              className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-2 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 text-sm font-semibold"
+                            >
+                              Book
+                            </button>
+                            <button
+                              onClick={() => navigate(`/doctor-details/${doctor.id}`)}
+                              className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-all duration-300 text-sm font-semibold"
+                            >
+                              Details
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Doctor Cards */}
-          {loading ? (
-            <div className="text-center py-12 text-gray-600">Loading doctors...</div>
-          ) : doctors.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-xl p-10 text-center text-gray-600">
-              No doctors found. Try changing filters or specialization.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {doctors.map((doctor) => (
-              <div
-                key={doctor.id}
-                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition p-6 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-800">{doctor.name}</h3>
-                      <p className="text-blue-600 font-medium">{doctor.specialization}</p>
-                    </div>
-                    {doctor.isVerified && (
-                      <span className="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-semibold">
-                        Verified
-                      </span>
-                    )}
-                  </div>
-
-                  {doctor.qualifications?.length > 0 && (
-                    <p className="text-sm text-gray-600 mb-1">{doctor.qualifications.join(", ")}</p>
-                  )}
-
-                  {doctor.experience > 0 && (
-                    <p className="text-sm text-gray-600 mb-1">{doctor.experience} years experience</p>
-                  )}
-
-                  {doctor.bio && (
-                    <p className="text-sm text-gray-700 mb-3 line-clamp-2">{doctor.bio}</p>
-                  )}
-
-                  <p className="text-sm text-gray-600 mb-1">
-                    <span className="font-medium">Fee:</span> Rs. {doctor.consultationFee || 0}
-                  </p>
-                  {(doctor.averageRating > 0 || doctor.totalReviews > 0) && (
-                    <p className="text-sm text-amber-600 font-medium">
-                      ★ {doctor.averageRating?.toFixed(1) || "0"} ({doctor.totalReviews || 0} review{doctor.totalReviews !== 1 ? "s" : ""})
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => handleViewDetails(doctor.id)}
-                  className="mt-4 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition font-medium"
-                >
-                  View Details & Book
-                </button>
+          {/* Loading State */}
+          {loading && (
+            <div className="max-w-6xl mx-auto mb-12">
+              <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-lg border border-white/20 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Searching for doctors...</p>
               </div>
-            ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && doctors.length === 0 && (
+            <div className="max-w-6xl mx-auto mb-12">
+              <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-lg border border-white/20 text-center">
+                <div className="text-gray-400 mb-4">
+                  <Search className="w-16 h-16 mx-auto" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  {isDepartmentSearch ? 'No doctors found in this specialization' : 'No doctors found'}
+                </h3>
+                <p className="text-gray-600">
+                  {isDepartmentSearch 
+                    ? 'There are no doctors available in this specialization at the moment.'
+                    : 'Try adjusting your search criteria or filters.'
+                  }
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Category Buttons - Hidden when specialization is set */}
+          {!specialization && (
+            <div className="max-w-6xl mx-auto mb-16">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                {[
+                  { name: "Cardiologist", icon: Heart, color: "from-red-400 to-pink-500" },
+                  { name: "Neurologist", icon: Stethoscope, color: "from-purple-400 to-indigo-500" },
+                  { name: "Pediatrics", icon: Users, color: "from-green-400 to-teal-500" },
+                  { name: "Orthopedics", icon: Calendar, color: "from-blue-400 to-cyan-500" },
+                  { name: "Dermatology", icon: Star, color: "from-yellow-400 to-orange-500" },
+                  { name: "Dentist", icon: Heart, color: "from-cyan-400 to-blue-500" },
+                  { name: "Psychiatrist", icon: Stethoscope, color: "from-indigo-400 to-purple-500" },
+                  { name: "General Practice", icon: Users, color: "from-gray-400 to-gray-500" }
+                ].map((category, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleCategoryClick(category.name)}
+                    className={`bg-gradient-to-r ${category.color} p-4 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group`}
+                  >
+                    <category.icon className="w-6 h-6 text-white mx-auto mb-2" />
+                    <span className="text-white text-xs font-medium">{category.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quick Stats - Bottom Features */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-16">
+            {/* Quick Stats Grid can be added here if needed */}
           </div>
-        )}
         </div>
       </div>
     </div>

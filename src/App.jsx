@@ -16,6 +16,7 @@ import DoctorAvailability from "./Pages/DoctorAvailability";
 import SearchDoctors from "./Pages/SearchDoctors";
 import NearbyDoctors from "./Pages/NearbyDoctors";
 import BookAppointment from "./Pages/BookAppointment";
+import DoctorDetails from "./Pages/DoctorDetails";
 import MyAppointments from "./Pages/MyAppointments";
 import DoctorAppointments from "./Pages/DoctorAppointments";
 import DoctorVerification from "./Pages/DoctorVerification";
@@ -122,6 +123,14 @@ function App() {
             element={
               <ProtectedRoute requiredRole="patient">
                 <BookAppointment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor-details/:doctorId"
+            element={
+              <ProtectedRoute requiredRole="patient">
+                <DoctorDetails />
               </ProtectedRoute>
             }
           />

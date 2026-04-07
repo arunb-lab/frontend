@@ -3,11 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import OpenStreetMap from '../Components/OpenStreetMap';
 import { 
-  getCurrentLocation, 
-  calculateDistance,
-  getTravelInfo 
-} from '../utils/mapUtils';
-import { 
   MapPin, 
   Search, 
   Filter, 
@@ -26,11 +21,10 @@ const NearbyDoctors = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [searchRadius, setSearchRadius] = useState(10); // km
+  const [searchRadius, setSearchRadius] = useState(300); // km - covers entire Nepal
   const [selectedSpecialization, setSelectedSpecialization] = useState('');
   const [sortBy, setSortBy] = useState('distance'); // distance, rating, fee
   const [showMap, setShowMap] = useState(true);
-  const [travelInfo, setTravelInfo] = useState({});
 
   const API_BASE = 'http://localhost:3000/doctors';
   const specializations = [
@@ -55,97 +49,6 @@ const NearbyDoctors = () => {
   useEffect(() => {
     sortDoctors();
   }, [sortBy, doctors]);
-
-  const fetchNearbyDoctors = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Get user location using native browser geolocation
-      const location = await new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-          // Fallback to Kathmandu coordinates if geolocation not supported
-          resolve({
-            lat: 27.7172,
-            lng: 85.3240
-          });
-          return;
-        }
-        
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
-          },
-          (error) => {
-            // Fallback to Kathmandu coordinates if user denies location
-            console.warn('Location access denied, using default location');
-            resolve({
-              lat: 27.7172,
-              lng: 85.3240
-            });
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 300000 // 5 minutes
-          }
-        );
-      });
-      
-      setUserLocation(location);
-      
-      // Fetch nearby doctors from API
-      const params = new URLSearchParams({
-        lat: location.lat,
-        lng: location.lng,
-        maxDistance: searchRadius
-      });
-      
-      if (selectedSpecialization) {
-        params.append('specialization', selectedSpecialization);
-      }
-
-      const response = await axios.get(`${API_BASE}/nearby?${params}`);
-      const doctorsData = response.data.doctors || [];
-      
-      // Get travel info for each doctor
-      const travelPromises = doctorsData.map(async (doctor) => {
-        try {
-          const travel = await getTravelInfo(
-            location,
-            {
-              lat: doctor.location.coordinates[1],
-              lng: doctor.location.coordinates[0]
-            },
-            'driving'
-          );
-          return {
-            ...doctor,
-            travelInfo: travel
-          };
-        } catch (err) {
-          return doctor; // Fallback if travel info fails
-        }
-      });
-
-      const doctorsWithTravel = await Promise.all(travelPromises);
-      setDoctors(doctorsWithTravel);
-      setFilteredDoctors(doctorsWithTravel);
-      
-    } catch (err) {
-      console.error('Error fetching nearby doctors:', err);
-      if (err.code === 1) {
-        setError('Location access denied. Please enable location services to find nearby doctors.');
-      } else {
-        setError('Failed to find nearby doctors. Please try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const sortDoctors = () => {
     let sorted = [...doctors];
@@ -182,26 +85,76 @@ const NearbyDoctors = () => {
     fetchNearbyDoctors();
   };
 
-  const formatTravelTime = (travelInfo) => {
-    if (!travelInfo) return null;
-    return travelInfo.duration;
-  };
+  const fetchNearbyDoctors = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Get user location using native browser geolocation
+      const location = await new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          // Fallback to central Nepal coordinates (covers Biratnagar and Kathmandu)
+          resolve({
+            lat: 26.5, // Central Nepal latitude
+            lng: 87.0  // Central Nepal longitude
+          });
+          return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+          },
+          (error) => {
+            // Fallback to central Nepal coordinates if user denies location
+            console.warn('Location access denied, using central Nepal location');
+            resolve({
+              lat: 26.5, // Central Nepal latitude
+              lng: 87.0  // Central Nepal longitude
+            });
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000 // 5 minutes
+          }
+        );
+      });
+      
+      setUserLocation(location);
+      
+      // Fetch nearby doctors from API
+      const params = new URLSearchParams({
+        lat: location.lat,
+        lng: location.lng,
+        maxDistance: searchRadius
+      });
+      
+      if (selectedSpecialization) {
+        params.append('specialization', selectedSpecialization);
+      }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-              <p className="text-gray-700 font-semibold mb-1">Locating you...</p>
-              <p className="text-gray-500 text-sm">Finding nearby healthcare providers</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+      const response = await axios.get(`${API_BASE}/nearby?${params}`);
+      const doctorsData = response.data.doctors || [];
+      
+      // Set doctors directly without travel info
+      setDoctors(doctorsData);
+      setFilteredDoctors(doctorsData);
+      
+    } catch (err) {
+      console.error('Error fetching nearby doctors:', err);
+      if (err.code === 1) {
+        setError('Location access denied. Please enable location services to find nearby doctors.');
+      } else {
+        setError('Failed to find nearby doctors. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (error) {
     return (
@@ -373,12 +326,6 @@ const NearbyDoctors = () => {
                                 <DollarSign className="w-4 h-4" />
                                 <span>Rs. {doctor.consultationFee}</span>
                               </div>
-                              {doctor.travelInfo && (
-                                <div className="flex items-center gap-2">
-                                  <Clock className="w-4 h-4" />
-                                  <span>{formatTravelTime(doctor.travelInfo)} away</span>
-                                </div>
-                              )}
                             </div>
 
                             <div className="flex items-center gap-4 mt-3">

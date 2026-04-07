@@ -59,20 +59,16 @@ const SearchDoctors = () => {
   useEffect(() => {
     fetchSpecializations();
     if (specFromUrl) setSpecialization(specFromUrl);
+    // Also fetch doctors initially
+    fetchDoctors();
   }, [specFromUrl]);
 
+  // Auto-search when specialization changes or specializations are loaded
   useEffect(() => {
-    fetchDoctors();
-  }, [specialization]);
-
-  // Auto-search when specialization changes
-  useEffect(() => {
-    if (specialization && specializations.length > 0) {
-      fetchDoctors();
-    } else if (!specialization && specializations.length > 0) {
+    if (specializations.length > 0) {
       fetchDoctors();
     }
-  }, [specialization]);
+  }, [specialization, specializations]);
 
   const fetchSpecializations = async () => {
     try {

@@ -2,14 +2,15 @@ import { Link } from "react-router-dom";
 import { Stethoscope, Heart, Baby, Bone, Brain, Smile } from "lucide-react";
 
 const DEPARTMENTS = [
-  { name: "General Physician", desc: "Primary care, check-ups, and common ailments", icon: Stethoscope, path: "/search-doctors?spec=General+Physician" },
-  { name: "Cardiologist", desc: "Heart and cardiovascular health", icon: Heart, path: "/search-doctors?spec=Cardiologist" },
+  { name: "General Practice", desc: "Primary care, check-ups, and common ailments", icon: Stethoscope, path: "/search-doctors?spec=General+Practice" },
+  { name: "Cardiology", desc: "Heart and cardiovascular health", icon: Heart, path: "/search-doctors?spec=Cardiology" },
+  { name: "Dermatology", desc: "Skin, hair, and nail conditions", icon: Smile, path: "/search-doctors?spec=Dermatology" },
   { name: "Dermatologist", desc: "Skin, hair, and nail conditions", icon: Smile, path: "/search-doctors?spec=Dermatologist" },
-  { name: "Pediatrician", desc: "Children's health from birth to adolescence", icon: Baby, path: "/search-doctors?spec=Pediatrician" },
-  { name: "Orthopedic", desc: "Bones, joints, and musculoskeletal care", icon: Bone, path: "/search-doctors?spec=Orthopedic" },
-  { name: "Gynecologist", desc: "Women's reproductive and pregnancy care", icon: Heart, path: "/search-doctors?spec=Gynecologist" },
+  { name: "Pediatrics", desc: "Children's health from birth to adolescence", icon: Baby, path: "/search-doctors?spec=Pediatrics" },
+  { name: "Orthopedics", desc: "Bones, joints, and musculoskeletal care", icon: Bone, path: "/search-doctors?spec=Orthopedics" },
+  { name: "Neurology", desc: "Brain and nervous system disorders", icon: Brain, path: "/search-doctors?spec=Neurology" },
   { name: "Neurologist", desc: "Brain and nervous system disorders", icon: Brain, path: "/search-doctors?spec=Neurologist" },
-  { name: "Psychiatrist", desc: "Mental health and behavioral conditions", icon: Brain, path: "/search-doctors?spec=Psychiatrist" },
+  { name: "Physician", desc: "General medical care and diagnosis", icon: Stethoscope, path: "/search-doctors?spec=Physician" },
   { name: "Dentist", desc: "Dental and oral health care", icon: Smile, path: "/search-doctors?spec=Dentist" },
 ];
 

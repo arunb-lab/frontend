@@ -35,19 +35,14 @@ const Navbar = () => {
         </Link>
         
         <ul className="hidden md:flex space-x-6 font-medium items-center text-white">
-          {/* Public Links */}
-          <li className="hover:text-gray-300 cursor-pointer">
-            <Link to="/">Home</Link>
-          </li>
-          <li className="hover:text-gray-300 cursor-pointer">
-            <Link to="/about">About Us</Link>
-          </li>
-          
           {authenticated ? (
             <>
               {/* Patient-specific links */}
               {user?.role === "patient" && (
                 <>
+                  <li className="hover:text-gray-300 cursor-pointer">
+                    <Link to="/patient/dashboard">Dashboard</Link>
+                  </li>
                   <li className="hover:text-gray-300 cursor-pointer">
                     <Link to="/departments">Departments</Link>
                   </li>
@@ -67,7 +62,16 @@ const Navbar = () => {
               {user?.role === "doctor" && (
                 <>
                   <li className="hover:text-gray-300 cursor-pointer">
-                    <Link to="/doctor/dashboard">My Appointments</Link>
+                    <Link to="/doctor/dashboard">Dashboard</Link>
+                  </li>
+                  <li className="hover:text-gray-300 cursor-pointer">
+                    <Link to="/doctor/availability">My Availability</Link>
+                  </li>
+                  <li className="hover:text-gray-300 cursor-pointer">
+                    <Link to="/doctor/appointments">My Appointments</Link>
+                  </li>
+                  <li className="hover:text-gray-300 cursor-pointer">
+                    <Link to="/doctor/chat">Messages</Link>
                   </li>
                 </>
               )}
@@ -76,30 +80,32 @@ const Navbar = () => {
               {user?.role === "admin" && (
                 <>
                   <li className="hover:text-gray-300 cursor-pointer">
-                    <Link to="/admin/dashboard">Manage Users</Link>
+                    <Link to="/admin/dashboard">Dashboard</Link>
                   </li>
                   <li className="hover:text-gray-300 cursor-pointer">
-                    <Link to="/admin/dashboard">Verify Doctors</Link>
+                    <Link to="/admin/users">Manage Users</Link>
+                  </li>
+                  <li className="hover:text-gray-300 cursor-pointer">
+                    <Link to="/admin/verification">Doctor Verification</Link>
+                  </li>
+                  <li className="hover:text-gray-300 cursor-pointer">
+                    <Link to="/admin/emergency">Emergency Cases</Link>
+                  </li>
+                  <li className="hover:text-gray-300 cursor-pointer">
+                    <Link to="/admin/reports">Reports</Link>
                   </li>
                 </>
               )}
-
-              {/* Common authenticated links */}
-              <li className="hover:text-gray-300 cursor-pointer">
-                <Link to={getDashboardPath()}>Dashboard</Link>
-              </li>
-              <li>
-                <button
-                  onClick={handleLogout}
-                  className="border border-white px-4 py-2 rounded hover:bg-white hover:text-blue-800 transition"
-                >
-                  Logout
-                </button>
-              </li>
             </>
           ) : (
             <>
-              {/* Public links when not authenticated */}
+              {/* Public Links - Only show when NOT logged in */}
+              <li className="hover:text-gray-300 cursor-pointer">
+                <Link to="/">Home</Link>
+              </li>
+              <li className="hover:text-gray-300 cursor-pointer">
+                <Link to="/about">About Us</Link>
+              </li>
               <li className="hover:text-gray-300 cursor-pointer">
                 <Link to="/departments">Departments</Link>
               </li>
@@ -109,24 +115,26 @@ const Navbar = () => {
               <li className="hover:text-gray-300 cursor-pointer">
                 <Link to="/nearby-doctors">Nearby Doctors</Link>
               </li>
+            </>
+          )}
+          
+          {/* Auth buttons */}
+          {authenticated ? (
+            <li>
+              <button
+                onClick={handleLogout}
+                className="border border-white px-4 py-2 rounded hover:bg-white hover:text-blue-800 transition"
+              >
+                Logout
+              </button>
+            </li>
+          ) : (
+            <>
               <li className="hover:text-gray-300 cursor-pointer">
-                <Link to="/contact">Contact</Link>
+                <Link to="/login">Login</Link>
               </li>
-              <li>
-                <Link
-                  to="/login"
-                  className="border border-white px-4 py-2 rounded hover:bg-white hover:text-blue-800 transition"
-                >
-                  Login
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/register"
-                  className="bg-white text-blue-700 px-4 py-2 rounded hover:bg-gray-100 transition"
-                >
-                  Register
-                </Link>
+              <li className="hover:text-gray-300 cursor-pointer">
+                <Link to="/register">Register</Link>
               </li>
             </>
           )}

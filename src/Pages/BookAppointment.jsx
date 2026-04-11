@@ -19,6 +19,9 @@ const BookAppointment = () => {
     isEmergency: false,
   });
   const [bookedSlots, setBookedSlots] = useState([]);
+  const [allDoctors, setAllDoctors] = useState([]);
+  const [selectedAdditionalDoctors, setSelectedAdditionalDoctors] = useState([]);
+  const [fetchingDoctors, setFetchingDoctors] = useState(false);
 
   
   const generateTimeSlots = (start, end) => {
@@ -83,6 +86,23 @@ const BookAppointment = () => {
       console.error("Error fetching doctor:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllDoctors();
+  }, [doctorId]);
+
+  const fetchAllDoctors = async () => {
+    setFetchingDoctors(true);
+    try {
+      const res = await axios.get("http://localhost:3000/doctors/search");
+      // Filter out the primary doctor
+      setAllDoctors(res.data.doctors.filter(d => d.id !== doctorId));
+    } catch (err) {
+      console.error("Error fetching all doctors:", err);
+    } finally {
+      setFetchingDoctors(false);
     }
   };
 
@@ -156,6 +176,7 @@ const BookAppointment = () => {
         "http://localhost:3000/payments/khalti/initiate",
         {
           doctorId,
+          additionalDoctorIds: selectedAdditionalDoctors,
           appointmentDate: formData.appointmentDate,
           appointmentTime: formData.appointmentTime,
           reason: formData.reason,
@@ -366,6 +387,51 @@ const BookAppointment = () => {
               </label>
             </div>
 
+            {/* Additional Doctors Selection */}
+            <div className="border-t pt-4 mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Consult with Additional Specialists (Joint Consultation)
+              </label>
+              <div className="space-y-2">
+                {fetchingDoctors ? (
+                  <p className="text-xs text-gray-500">Loading specialists...</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {allDoctors.map((doc) => (
+                      <div
+                        key={doc.id}
+                        onClick={() => {
+                          setSelectedAdditionalDoctors(prev =>
+                            prev.includes(doc.id) ? prev.filter(id => id !== doc.id) : [...prev, doc.id]
+                          );
+                        }}
+                        className={`p-3 rounded-lg border cursor-pointer transition flex items-center gap-3 ${
+                          selectedAdditionalDoctors.includes(doc.id)
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 hover:border-blue-300"
+                        }`}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                          selectedAdditionalDoctors.includes(doc.id) ? "bg-blue-600 border-blue-600" : "bg-white border-gray-300"
+                        }`}>
+                          {selectedAdditionalDoctors.includes(doc.id) && <span className="text-white text-[10px]">✓</span>}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">Dr. {doc.name}</p>
+                          <p className="text-xs text-blue-600">{doc.specialization}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedAdditionalDoctors.length > 0 && (
+                  <p className="text-xs text-blue-700 mt-2">
+                    {selectedAdditionalDoctors.length} additional specialist(s) selected for joint consultation.
+                  </p>
+                )}
+              </div>
+            </div>
+
             <div className="flex gap-4">
               <button
                 type="button"
@@ -379,7 +445,7 @@ const BookAppointment = () => {
                 disabled={submitting}
                 className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition"
               >
-                {submitting ? "Booking..." : "Book Appointment"}
+                {submitting ? "Booking..." : "Submit & Pay Consultation Fee"}
               </button>
             </div>
           </form>

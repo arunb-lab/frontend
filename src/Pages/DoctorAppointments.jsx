@@ -296,7 +296,7 @@ const DoctorAppointments = () => {
                         )}
                         {(apt.status === "approved" || apt.status === "completed") && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); setSelectedAppointment(apt); setShowPrescriptionModal(true); }}
+                            onClick={(e) => { e.stopPropagation(); handleSelectPatient(apt); setShowPrescriptionModal(true); }}
                             className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 flex items-center gap-1"
                           >
                             <ClipboardList className="w-4 h-4" /> {apt.status === "completed" ? "Edit Prescription" : "Write Prescription"}
@@ -361,7 +361,7 @@ const DoctorAppointments = () => {
             <div className="bg-blue-600 p-6 text-white flex justify-between items-center sticky top-0 z-10">
               <div>
                 <h2 className="text-xl font-bold">Write Prescription</h2>
-                <p className="text-blue-100 text-sm">Patient: {selectedPatient.name}</p>
+                <p className="text-blue-100 text-sm">Patient: {selectedPatient?.name || "Patient"}</p>
               </div>
               <button 
                 onClick={() => setShowPrescriptionModal(false)}

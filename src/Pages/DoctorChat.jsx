@@ -363,8 +363,8 @@ const DoctorChat = () => {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white">
-                <div className="max-w-4xl mx-auto space-y-4">
+              <div className="flex-1 overflow-y-auto p-6 bg-[#f8fafc]">
+                <div className="max-w-4xl mx-auto space-y-6">
                   {messages.map((m, index) => {
                     const isDoctor = m.senderRole === "doctor";
                     const showDate = index === 0 || 
@@ -381,37 +381,43 @@ const DoctorChat = () => {
                         )}
                         <div className={`flex ${isDoctor ? "justify-end" : "justify-start"}`}>
                           <div className={`max-w-xs lg:max-w-md xl:max-w-lg ${isDoctor ? "order-2" : "order-1"}`}>
-                            <div className={`rounded-2xl px-4 py-3 shadow-sm ${
+                            <div className={`px-5 py-3 shadow-sm ${
                               isDoctor 
-                                ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white" 
-                                : "bg-white border border-gray-200 text-gray-800"
+                                ? "bg-blue-600 text-white rounded-2xl rounded-tr-none" 
+                                : "bg-white border border-slate-200 text-slate-800 rounded-2xl rounded-tl-none"
                             }`}>
                               {m.type === "prescription" ? (
-                                <div className="space-y-2">
-                                  <div className="flex items-center gap-2">
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2 border-b border-white/20 pb-2">
                                     <FileText className="w-5 h-5" />
-                                    <span className="font-medium">Prescription</span>
+                                    <span className="font-bold text-sm uppercase tracking-wider">Medical Prescription</span>
                                   </div>
-                                  <div className="bg-white/10 rounded-lg p-3">
-                                    <p className="text-sm font-medium mb-2">{m.prescriptionFileName || "Prescription File"}</p>
+                                  <div className={`${isDoctor ? "bg-white/10" : "bg-slate-50"} rounded-xl p-4 border ${isDoctor ? "border-white/10" : "border-slate-100"}`}>
+                                    <p className={`text-xs font-semibold mb-3 ${isDoctor ? "text-blue-100" : "text-slate-500"}`}>
+                                      {m.prescriptionFileName || "prescription_report.pdf"}
+                                    </p>
                                     <a
                                       href={`${BASE}${m.prescriptionUrl}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-2 bg-white text-blue-600 px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
+                                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm ${
+                                        isDoctor 
+                                          ? "bg-white text-blue-600 hover:bg-blue-50" 
+                                          : "bg-blue-600 text-white hover:bg-blue-700"
+                                      }`}
                                     >
                                       <FileText className="w-4 h-4" />
-                                      View Prescription
+                                      View Document
                                     </a>
                                   </div>
                                 </div>
                               ) : (
-                                <p className="text-sm leading-relaxed">{m.content}</p>
+                                <p className="text-[15px] leading-relaxed font-medium">{m.content}</p>
                               )}
-                              <div className={`flex items-center justify-between mt-2 text-xs ${
-                                isDoctor ? "text-blue-100" : "text-gray-400"
+                              <div className={`flex items-center justify-between mt-2.5 ${
+                                isDoctor ? "text-blue-100" : "text-slate-400"
                               }`}>
-                                <span>{formatTime(m.createdAt)}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-tight">{formatTime(m.createdAt)}</span>
                                 {isDoctor && (
                                   <div className="flex items-center gap-1">
                                     <Check className="w-3 h-3" />

@@ -17,11 +17,13 @@ const ForgotPassword = () => {
       const res = await axios.post("http://localhost:3000/users/forgot-password", {
         email: email.trim(),
       });
-      setMessage(
-        res.data.message || "If an account exists with this email, you will receive a password reset link."
-      );
       if (res.data.resetLink) {
-        setMessage((prev) => prev + " Use this link (dev): " + res.data.resetLink);
+        setMessage({
+          msg: res.data.message,
+          link: res.data.resetLink
+        });
+      } else {
+        setMessage(res.data.message || "Password reset link sent to your email.");
       }
     } catch (err) {
       setError(err.response?.data?.message || "Request failed. Try again.");
@@ -45,7 +47,18 @@ const ForgotPassword = () => {
         )}
         {message && (
           <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded mb-4 text-sm break-words">
-            {message}
+            <p>{typeof message === 'object' ? message.msg : message}</p>
+            {typeof message === 'object' && message.link && (
+              <div className="mt-3">
+                <a 
+                  href={message.link} 
+                  className="inline-block bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition font-semibold"
+                >
+                  Click here to Reset Password (Demo)
+                </a>
+                <p className="mt-2 text-[10px] opacity-75 italic">Note: In production, this link is sent to your email.</p>
+              </div>
+            )}
           </div>
         )}
 

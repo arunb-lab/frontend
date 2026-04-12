@@ -5,7 +5,7 @@ import { isAuthenticated, isAdmin, getAuthConfig } from "../utils/auth";
 import { showErrorToast } from "../utils/toast";
 import { Users, ArrowLeft, Search } from "lucide-react";
 
-const API_BASE = "http://localhost:3000/api/admin";
+const API_BASE = "http://localhost:3000/admin";
 
 const AdminUserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -28,14 +28,18 @@ const AdminUserManagement = () => {
       const config = getAuthConfig();
       let url = `${API_BASE}/users`;
       if (roleFilter) url += `?role=${roleFilter}`;
+      console.log('Fetching users from:', url);
       const res = await axios.get(url, config);
+      console.log('Users response:', res.data);
       if (search) {
         setUsers(res.data.filter(u => u.username.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())));
       } else {
         setUsers(res.data);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching users:", err);
+      // Set empty array if API fails
+      setUsers([]);
     } finally {
       setLoading(false);
     }

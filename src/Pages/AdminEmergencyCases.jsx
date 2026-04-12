@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { isAuthenticated, isAdmin, getAuthConfig } from "../utils/auth";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 
-const API_BASE = "http://localhost:3000/api/admin";
+const API_BASE = "http://localhost:3000/admin";
 
 const AdminEmergencyCases = () => {
   const [cases, setCases] = useState([]);
@@ -23,10 +23,14 @@ const AdminEmergencyCases = () => {
     setLoading(true);
     try {
       const config = getAuthConfig();
+      console.log('Fetching emergency cases from:', `${API_BASE}/emergency-cases`);
       const res = await axios.get(`${API_BASE}/emergency-cases`, config);
+      console.log('Emergency cases response:', res.data);
       setCases(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching emergency cases:", err);
+      // Set empty array if API fails
+      setCases([]);
     } finally {
       setLoading(false);
     }

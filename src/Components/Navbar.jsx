@@ -55,6 +55,9 @@ const Navbar = () => {
                   <li className="hover:text-gray-300 cursor-pointer">
                     <Link to="/my-appointments">My Appointments</Link>
                   </li>
+                  <li className="hover:text-gray-300 cursor-pointer">
+  <Link to="/patient/chat">Message</Link>
+</li>
                 </>
               )}
 

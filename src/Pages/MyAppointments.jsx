@@ -33,15 +33,68 @@ const MyAppointments = () => {
     setLoading(true);
     setError("");
     try {
+      console.log('=== MY APPOINTMENTS DATA FETCH ===');
+      console.log('Fetching patient appointments...');
+      
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      console.log('Current user from localStorage:', user);
+      console.log('User ID:', user.id);
+      console.log('User role:', user.role);
+      
       const config = getAuthConfig();
+      console.log('Auth config:', config);
+      console.log('API URL:', "http://localhost:3000/appointments/my");
+      
       const res = await axios.get(
         "http://localhost:3000/appointments/my",
         config
       );
+      
+      console.log('Appointments response:', res.data);
+      console.log('Appointments array:', res.data.appointments);
+      console.log('Number of appointments:', res.data.appointments?.length || 0);
+      
+      // Check if appointments are for the current user
+      if (res.data.appointments && res.data.appointments.length > 0) {
+        console.log('Appointments found:', res.data.appointments.length);
+        res.data.appointments.forEach((apt, index) => {
+          console.log(`Appointment ${index + 1}:`, {
+            id: apt._id,
+            patientId: apt.patientId,
+            doctor: apt.doctorId?.username,
+            date: apt.appointmentDate,
+            time: apt.appointmentTime,
+            status: apt.status
+          });
+        });
+      } else {
+        console.log('No appointments found - checking if any exist in database');
+        // Let's check if the user is authenticated properly
+        if (!user.id) {
+          console.error('No user ID found in localStorage - authentication issue');
+        }
+      }
+      
       setAppointments(res.data.appointments || []);
+      
     } catch (err) {
       console.error("Error fetching appointments:", err);
-      setError("Failed to load your appointments. Please try again.");
+      console.error('Error details:', err.response?.data || err.message);
+      console.error('Error status:', err.response?.status);
+      
+      // Check if it's an authentication error
+      if (err.response?.status === 401) {
+        console.error('Authentication error - token may be expired');
+        setError("Authentication expired. Please login again.");
+      } else if (err.response?.status === 403) {
+        console.error('Authorization error - user may not have permission');
+        setError("You don't have permission to view appointments.");
+      } else {
+        setError("Failed to load your appointments. Please try again.");
+      }
+      
+      // Set empty array if API fails
+      setAppointments([]);
     } finally {
       setLoading(false);
     }

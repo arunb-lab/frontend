@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { isAuthenticated, isAdmin, getAuthConfig } from "../utils/auth";
 import { BarChart3, ArrowLeft, Users, Calendar, Stethoscope, AlertTriangle } from "lucide-react";
 
-const API_BASE = "http://localhost:3000/api/admin";
+const API_BASE = "http://localhost:3000/admin";
 
 const AdminReports = () => {
   const [report, setReport] = useState(null);

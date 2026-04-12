@@ -19,10 +19,26 @@ const DoctorVerification = () => {
   const fetchDoctors = async () => {
     try {
       const config = getAuthConfig();
-      const res = await axios.get("http://localhost:3000/api/admin/pending-doctors", config);
+      console.log('Fetching pending doctors from:', "http://localhost:3000/admin/pending-doctors");
+      const res = await axios.get("http://localhost:3000/admin/pending-doctors", config);
+      console.log('Pending doctors response:', res.data);
+      console.log('Number of pending doctors:', res.data.length);
+      console.log('Response type:', typeof res.data);
+      
+      if (Array.isArray(res.data)) {
+        console.log('Response is array, length:', res.data.length);
+        if (res.data.length === 0) {
+          console.log('No pending doctors found - all doctors may be verified');
+        }
+      } else {
+        console.log('Response is not array:', res.data);
+      }
+      
       setDoctors(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching pending doctors:", err);
+      // Set empty array if API fails
+      setDoctors([]);
     } finally {
       setLoading(false);
     }
@@ -31,7 +47,9 @@ const DoctorVerification = () => {
   const verifyDoctor = async (id, status) => {
     try {
       const config = getAuthConfig();
-      await axios.put(`http://localhost:3000/api/admin/verify-doctor/${id}`, { status }, config);
+      console.log('Verifying doctor:', id, 'with status:', status);
+      await axios.put(`http://localhost:3000/admin/verify-doctor/${id}`, { status }, config);
+      console.log('Doctor verification successful');
       setDoctors((prev) => prev.filter((doc) => doc._id !== id));
     } catch (err) {
       console.error("Verification failed", err);

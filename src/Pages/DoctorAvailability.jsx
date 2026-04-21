@@ -15,6 +15,7 @@ const DAYS_OF_WEEK = [
 ];
 
 const DoctorAvailability = () => {
+  const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -42,7 +43,7 @@ const DoctorAvailability = () => {
     try {
       const config = getAuthConfig();
       const res = await axios.get(
-        "http://localhost:3000/doctors/profile",
+        `${API}/doctors/profile`,
         config
       );
       if (res.data) {
@@ -85,7 +86,7 @@ const DoctorAvailability = () => {
     try {
       const config = getAuthConfig();
       await axios.put(
-        "http://localhost:3000/doctors/availability",
+        `{API}/doctors/availability`,
         { status, availability },
         config
       );

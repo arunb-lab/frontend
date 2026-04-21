@@ -21,7 +21,8 @@ const DoctorDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [todayAppointments, setTodayAppointments] = useState([]);
-
+  const API = import.meta.env.VITE_API_URL;
+  
   useEffect(() => {
     if (!isAuthenticated() || !isDoctor()) {
       navigate("/login");
@@ -34,8 +35,8 @@ const DoctorDashboard = () => {
         console.log('Fetching doctor stats and appointments...');
         
         const [statsRes, appointmentsRes] = await Promise.all([
-          axios.get("http://localhost:3000/doctors/stats", getAuthConfig()),
-          axios.get("http://localhost:3000/doctors/appointments/my", getAuthConfig())
+          axios.get(`${API}/doctors/stats`, getAuthConfig())
+          axios.get(`${API}/doctors/appointments/my`, getAuthConfig())
         ]);
         
         console.log('Stats response:', statsRes.data);

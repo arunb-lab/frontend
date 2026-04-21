@@ -8,12 +8,14 @@ const DoctorDetails = () => {
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
+  const API = import.meta.env.VITE_API_URL;
+  
 
   useEffect(() => {
     const fetchDoctorDetails = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`http://localhost:3000/doctors/${doctorId}`);
+        const res = await axios.get(`${API}/doctors/${doctorId}`);
         setDoctor(res.data);
       } catch (err) {
         console.error("Error fetching doctor details:", err);

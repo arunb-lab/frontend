@@ -5,6 +5,8 @@ import { showSuccessToast, showErrorToast } from "../utils/toast";
 import loginImage from "../assets/Login.jpg";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
+const API = import.meta.env.VITE_API_URL; // ✅ added
+
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -20,7 +22,7 @@ const Login = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:3000/users/login",
+        `${API}/users/login`, // ✅ fixed
         { email: email.trim(), password }
       );
 
@@ -53,7 +55,6 @@ const Login = () => {
     <div className="min-h-screen bg-gray-300 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full flex overflow-hidden">
         
-        {/* Left Image */}
         <div className="hidden md:block md:w-1/2 relative">
           <img
             src={loginImage}
@@ -63,7 +64,6 @@ const Login = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
         </div>
 
-        {/* Login Form */}
         <div className="w-full md:w-1/2 p-10 flex flex-col justify-center">
           <h2 className="text-3xl font-extrabold text-center text-blue-700 mb-6">Welcome Back!</h2>
           <p className="text-center text-gray-500 mb-8">Login to your account</p>
@@ -83,23 +83,23 @@ const Login = () => {
               required
               className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
-           <div className="relative">
-  <input
-    type={showPassword ? "text" : "password"}
-    placeholder="Password"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-    required
-    className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-  />
 
-  <span
-    onClick={() => setShowPassword(!showPassword)}
-    className="absolute right-3 top-4 cursor-pointer text-gray-500"
-  >
-    {showPassword ? <FaEyeSlash /> : <FaEye />}
-  </span>
-</div>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              />
+              <span
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-4 cursor-pointer text-gray-500"
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </span>
+            </div>
 
             <button
               type="submit"
@@ -109,7 +109,6 @@ const Login = () => {
               {loading ? "Logging in..." : "Login"}
             </button>
 
-            {/* Stacked Links */}
             <div className="flex flex-col items-center gap-2 mt-3 text-sm text-gray-500">
               <Link to="/forgot-password" className="text-blue-600 hover:underline">
                 Forgot password?

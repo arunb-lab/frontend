@@ -6,6 +6,7 @@ import { showSuccessToast, showErrorToast } from "../utils/toast";
 import { ClipboardList, User, AlertCircle, X } from "lucide-react";
 
 const DoctorAppointments = () => {
+  const API = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,7 @@ const DoctorAppointments = () => {
     try {
       const config = getAuthConfig();
       const res = await axios.get(
-        "http://localhost:3000/doctors/appointments/my",
+        `${API}/doctors/appointments/my`,
         config
       );
       setAppointments(res.data.appointments || []);
@@ -83,7 +84,7 @@ const DoctorAppointments = () => {
   const handleAction = async (aptId, action, extra = {}) => {
     try {
       const config = getAuthConfig();
-      const url = `http://localhost:3000/appointments/${aptId}/${action}`;
+      const url = `${API}/appointments/${aptId}/${action}`;
       await axios.put(url, extra, config);
       fetchAppointments();
       if (selectedAppointment?._id === aptId) {
@@ -145,7 +146,7 @@ const DoctorAppointments = () => {
     try {
       const config = getAuthConfig();
       await axios.post(
-        `http://localhost:3000/appointments/${selectedAppointment._id}/prescribe`,
+        `${API}/appointments/${selectedAppointment._id}/prescribe`,
         prescriptionData,
         config
       );

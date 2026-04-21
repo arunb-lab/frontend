@@ -35,7 +35,7 @@ const DoctorDashboard = () => {
         console.log('Fetching doctor stats and appointments...');
         
         const [statsRes, appointmentsRes] = await Promise.all([
-          axios.get(`${API}/doctors/stats`, getAuthConfig())
+          axios.get(`${API}/doctors/stats`, getAuthConfig()),
           axios.get(`${API}/doctors/appointments/my`, getAuthConfig())
         ]);
         

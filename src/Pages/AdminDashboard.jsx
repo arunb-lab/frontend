@@ -18,7 +18,8 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const API = import.meta.env.VITE_API_URL;
+  
   useEffect(() => {
     if (!isAuthenticated() || !isAdmin()) {
       navigate("/login");
@@ -27,7 +28,7 @@ const AdminDashboard = () => {
 
     const fetchStats = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/admin/reports", getAuthConfig());
+        const res = await axios.get(`{API}/admin/reports`, getAuthConfig());
         console.log('Admin stats response:', res.data);
         setStats(res.data);
       } catch (err) {

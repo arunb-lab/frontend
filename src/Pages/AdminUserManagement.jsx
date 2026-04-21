@@ -5,7 +5,7 @@ import { isAuthenticated, isAdmin, getAuthConfig } from "../utils/auth";
 import { showErrorToast } from "../utils/toast";
 import { Users, ArrowLeft, Search } from "lucide-react";
 
-const API_BASE = "http://localhost:3000/admin";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 const AdminUserManagement = () => {
   const [users, setUsers] = useState([]);

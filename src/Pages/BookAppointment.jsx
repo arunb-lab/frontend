@@ -5,7 +5,7 @@ import { getAuthConfig } from "../utils/auth";
 import { showSuccessToast, showErrorToast } from "../utils/toast";
 
 const BookAppointment = () => {
-  const API = import.meta.env.VITE_API_URL; // ✅ added
+  const API = import.meta.env.VITE_API_URL;
 
   const navigate = useNavigate();
   const { doctorId } = useParams();
@@ -60,7 +60,7 @@ const BookAppointment = () => {
     try {
       const config = getAuthConfig();
       const res = await axios.get(
-        `${API}/appointments/booked-slots?doctorId=${doctorId}&date=${formData.appointmentDate}`, // ✅ fixed
+        `${API}/appointments/booked-slots?doctorId=${doctorId}&date=${formData.appointmentDate}`,
         config
       );
       setBookedSlots(Array.isArray(res.data) ? res.data : res.data?.slots || []);
@@ -78,7 +78,7 @@ const BookAppointment = () => {
   const fetchDoctorDetails = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/doctors/${doctorId}`); // ✅ fixed
+      const res = await axios.get(`${API}/doctors/${doctorId}`);
       setDoctor(res.data);
     } catch (err) {
       setError("Failed to load doctor details. Please try again.");
@@ -95,7 +95,7 @@ const BookAppointment = () => {
   const fetchAllDoctors = async () => {
     setFetchingDoctors(true);
     try {
-      const res = await axios.get(`${API}/doctors/search`); // already correct
+      const res = await axios.get(`${API}/doctors/search`);
       setAllDoctors(res.data.doctors.filter(d => d.id !== doctorId));
     } catch (err) {
       console.error("Error fetching all doctors:", err);
@@ -161,7 +161,7 @@ const BookAppointment = () => {
     try {
       const config = getAuthConfig();
       const res = await axios.post(
-        `${API}/payments/khalti/initiate`, // already correct
+        `${API}/payments/khalti/initiate`,
         {
           doctorId,
           additionalDoctorIds: selectedAdditionalDoctors,
@@ -180,4 +180,12 @@ const BookAppointment = () => {
     }
   };
 
-  export default BookAppointment;
+  // ✅ FIX: add return + close component properly
+  return (
+    <div>
+      Book Appointment Page
+    </div>
+  );
+};
+
+export default BookAppointment;

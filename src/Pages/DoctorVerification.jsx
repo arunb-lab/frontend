@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { isAuthenticated, isAdmin, getAuthConfig } from "../utils/auth";
 import { CheckCircle, XCircle, UserCheck } from "lucide-react";
 
+const API = import.meta.env.VITE_API_URL; // ✅ added
+
 const DoctorVerification = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,8 +21,8 @@ const DoctorVerification = () => {
   const fetchDoctors = async () => {
     try {
       const config = getAuthConfig();
-      console.log('Fetching pending doctors from:', "http://localhost:3000/admin/pending-doctors");
-      const res = await axios.get("http://localhost:3000/admin/pending-doctors", config);
+      console.log('Fetching pending doctors from:', `${API}/admin/pending-doctors`);
+      const res = await axios.get(`${API}/admin/pending-doctors`, config);
       console.log('Pending doctors response:', res.data);
       console.log('Number of pending doctors:', res.data.length);
       console.log('Response type:', typeof res.data);
@@ -37,7 +39,6 @@ const DoctorVerification = () => {
       setDoctors(res.data);
     } catch (err) {
       console.error("Error fetching pending doctors:", err);
-      // Set empty array if API fails
       setDoctors([]);
     } finally {
       setLoading(false);
@@ -48,7 +49,7 @@ const DoctorVerification = () => {
     try {
       const config = getAuthConfig();
       console.log('Verifying doctor:', id, 'with status:', status);
-      await axios.put(`http://localhost:3000/admin/verify-doctor/${id}`, { status }, config);
+      await axios.put(`${API}/admin/verify-doctor/${id}`, { status }, config);
       console.log('Doctor verification successful');
       setDoctors((prev) => prev.filter((doc) => doc._id !== id));
     } catch (err) {
@@ -59,7 +60,6 @@ const DoctorVerification = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-300 via-gray-300 to-gray-300 p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <UserCheck className="w-10 h-10 text-blue-600" />
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
@@ -67,7 +67,6 @@ const DoctorVerification = () => {
           </h1>
         </div>
 
-        {/* Card */}
         <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-8">
           {loading ? (
             <p className="text-center text-gray-600 text-lg">Loading doctors...</p>

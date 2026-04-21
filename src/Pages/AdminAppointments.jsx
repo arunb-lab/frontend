@@ -5,7 +5,7 @@ import { isAuthenticated, isAdmin, getAuthConfig } from "../utils/auth";
 import { showErrorToast } from "../utils/toast";
 import { Calendar, ArrowLeft } from "lucide-react";
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 const AdminAppointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -25,7 +25,7 @@ const AdminAppointments = () => {
     setLoading(true);
     try {
       const config = getAuthConfig();
-      const res = await axios.get(`${API_BASE}/api/admin/appointments`, config);
+      const res = await axios.get(`${API_BASE}/admin/appointments`, config);
       setAppointments(res.data || []);
     } catch (err) {
       console.error(err);

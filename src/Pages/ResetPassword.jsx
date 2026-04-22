@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 
+
+const API = import.meta.env.VITE_API_URL;
+
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
@@ -29,7 +32,7 @@ const ResetPassword = () => {
     }
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:3000/users/reset-password", {
+    const res = await axios.post(`${API}/users/reset-password`, {
         token,
         newPassword,
       });

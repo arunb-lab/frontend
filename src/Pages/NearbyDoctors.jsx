@@ -14,6 +14,8 @@ import {
   Star
 } from 'lucide-react';
 
+//const API = import.meta.env.VITE_API_URL; 
+
 const NearbyDoctors = () => {
   const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
@@ -26,7 +28,7 @@ const NearbyDoctors = () => {
   const [sortBy, setSortBy] = useState('distance'); // distance, rating, fee
   const [showMap, setShowMap] = useState(true);
 
-  const API_BASE = 'http://localhost:3000/doctors';
+  const API_BASE = import.meta.env.VITE_API_URL; 
   const specializations = [
     'General Practice',
     'Cardiology',

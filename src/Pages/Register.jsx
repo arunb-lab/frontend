@@ -117,8 +117,10 @@ const Register = () => {
         registrationData.clinicLat = formData.clinicLat || "27.7172"; // Default Kathmandu coordinates
         registrationData.clinicLng = formData.clinicLng || "85.3240";
       }
+      const API = import.meta.env.VITE_API_URL;
 
-      const res = await axios.post("http://localhost:3000/users/register", registrationData);
+      const res = await axios.post(`${API}/users/register`, registrationData);
+     // const res = await axios.post("http://localhost:3000/users/register", registrationData);
 
       if (formData.role === "doctor" && res.data.requiresVerification) {
         showInfoToast(`${res.data.message}\n\nYour doctor account is pending admin verification. You can login, but some features may be limited until an admin verifies your account.`);

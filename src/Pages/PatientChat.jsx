@@ -5,8 +5,8 @@ import { getAuthConfig, isAuthenticated, isPatient } from "../utils/auth";
 import { showErrorToast, showSuccessToast } from "../utils/toast";
 import { MessageCircle, Send, FileText, ArrowLeft, User, Clock, Check, Stethoscope, Upload } from "lucide-react";
 
-const API = "http://localhost:3000/chat";
-const BASE = "http://localhost:3000";
+const BASE = import.meta.env.VITE_API_URL;
+const API = `${BASE}/chat`;
 
 const PatientChat = () => {
   const navigate = useNavigate();
